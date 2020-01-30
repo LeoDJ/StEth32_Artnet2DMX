@@ -50,7 +50,7 @@ uint64_t fastHash64(const void * buf, size_t len, uint64_t seed) {
 void generateMAC(uint8_t *macArray) {
 
     // uint32_t uid[3] = {HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2()};
-    uint64_t hash = fastHash64((uint8_t *)UID_BASE, 12, 0x421337f00beef);
+    uint64_t hash = fastHash64((uint8_t *)UID_BASE, 12, 0x421337f00beefULL);
     memcpy(macArray, &hash, 6);
     macArray[0] = 0x42; // set first byte to predefined value, where private bit is set
 
@@ -65,23 +65,36 @@ void initEthernet() {
     Ethernet.init(PB12);
 
     generateMAC(mac);
+}
 
-    DEBUG.println("Initialize Ethernet with DHCP:");
-    if (Ethernet.begin(mac) == 0) {
-        DEBUG.println("Failed to configure Ethernet using DHCP");
-        if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-            DEBUG.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-            delay(5000);
-            HAL_NVIC_SystemReset();
-        } else if (Ethernet.linkStatus() == LinkOFF) {
-            DEBUG.println("Ethernet cable is not connected.");
+bool connectEthernet() {
+    DEBUG.println("Initialize Ethernet");
+
+    bool success= true;
+
+    if(config.dhcp) {
+        if (Ethernet.begin(mac, 10000) == 0) {
+            DEBUG.println("Failed to configure Ethernet using DHCP");
+            success= false;
         }
-        // no point in carrying on, so do nothing forevermore:
-        while (true) {
-            delay(1);
-        }
+    } 
+    else {
+        Ethernet.begin(mac, IPAddress(mac));
     }
-    // print your local IP address:
-    DEBUG.print("My IP address: ");
-    DEBUG.println(Ethernet.localIP());
+
+    if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+        DEBUG.println("Ethernet module was not found.  Sorry, can't run without hardware. :(");
+        delay(5000);
+        HAL_NVIC_SystemReset();
+    } else if (Ethernet.linkStatus() == LinkOFF) {
+        DEBUG.println("Ethernet cable is not connected.");
+        success= false;
+    }
+    
+    if(success) {
+        // print your local IP address:
+        DEBUG.print("My IP address: ");
+        DEBUG.println(Ethernet.localIP());
+    }
+    return success;
 }
