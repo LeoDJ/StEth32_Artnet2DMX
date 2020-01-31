@@ -58,11 +58,11 @@ void generateMAC(uint8_t *macArray) {
 }
 
 void initEthernet() {
-    SPI.setMOSI(PB15);
-    SPI.setMISO(PB14);
-    SPI.setSCLK(PB13);
+    SPI.setMOSI(SPI2_MOSI);
+    SPI.setMISO(SPI2_MISO);
+    SPI.setSCLK(SPI2_SCK);
 
-    Ethernet.init(PB12);
+    Ethernet.init(SPI2_CS);
 
     generateMAC(mac);
 }
@@ -72,7 +72,7 @@ bool connectEthernet() {
 
     bool success= true;
 
-    if(config.dhcp) {
+    if(_config.dhcp) {
         if (Ethernet.begin(mac, 10000) == 0) {
             DEBUG.println("Failed to configure Ethernet using DHCP");
             success= false;

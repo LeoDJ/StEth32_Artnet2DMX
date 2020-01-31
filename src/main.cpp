@@ -1,19 +1,20 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "eth.h"
+#include "display.h"
 
 
-config_t config;
+config_t _config;
 
 void saveConfig() {
-    EEPROM.put(0, config);
+    EEPROM.put(0, _config);
 }
 
 void readConfig() {
-    EEPROM.get(0, config);
+    EEPROM.get(0, _config);
     // TODO: find better way of config version mismatch handling
-    if (config.preamble != CONFIG_PREAMBLE || config.configVersion != CONFIG_VERSION) {
-        config = {
+    if (_config.preamble != CONFIG_PREAMBLE || _config.configVersion != CONFIG_VERSION) {
+        _config = {
             CONFIG_PREAMBLE,
             CONFIG_VERSION,
             true,
@@ -32,8 +33,9 @@ void setup() {
     readConfig();
 
     initEthernet();
+    initDisplay();
 }
 
 void loop() {
-    // put your main code here, to run repeatedly:
+    loopDisplay();
 }
