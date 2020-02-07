@@ -32,7 +32,7 @@ void setup() {
     DEBUG.println("\nStEth32 Artnet2DMX\n");
     readConfig();
 
-    initEthernet();
+    // initEthernet();
     initDisplay();
 }
 

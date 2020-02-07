@@ -10,10 +10,10 @@
 
 using namespace Menu;
 
-#define fontName u8g2_font_7x13_mf
-#define fontX 7
-#define fontY 16
-#define offsetX 0
+#define fontName u8g2_font_6x10_mf 
+#define fontX 6
+#define fontY 12
+#define offsetX 1
 #define offsetY 3
 #define U8_Width 128
 #define U8_Height 64
@@ -64,14 +64,86 @@ MENU(mainMenu, "Artnet2DMX", doNothing, noEvent, wrapStyle,
 
 NAVROOT(nav, mainMenu, MAX_DEPTH, in, out);
 
+uint8_t encoderState = 0;
+int16_t encoderPosition = 0, lastEncoderPosition = 0, lastEncStepPosition = 0;
+uint32_t lastButtonPress = 0;
+
+void buttonISR() {
+    uint32_t now = millis();
+    if(now - lastButtonPress > BTN_DEBOUNCE) {
+        lastButtonPress = now;
+        if(digitalRead(PIN_ENCODER_BTN)) {
+            nav.doNav(enterCmd);
+        }
+    }
+}
+
+void encoderISR() {
+    uint8_t p1val = digitalRead(PIN_ENCODER_A);
+    uint8_t p2val = digitalRead(PIN_ENCODER_B);
+    uint8_t state = encoderState & 3;
+    if (p1val) state |= 4;
+    if (p2val) state |= 8;
+    encoderState = (state >> 2);
+    switch (state) {
+        case 1: case 7: case 8: case 14:
+            encoderPosition++;
+            return;
+        case 2: case 4: case 11: case 13:
+            encoderPosition--;
+            return;
+        case 3: case 12:
+            encoderPosition += 2;
+            return;
+        case 6: case 9:
+            encoderPosition -= 2;
+            return;
+    }
+}
+
 void initDisplay() {
     Wire.begin();
+    // scanI2C();
     u8g2.begin();
     u8g2.setFont(fontName);
+
+    pinMode(PB11, OUTPUT);      // Use B11 as 3.3V pin
+    digitalWrite(PB11, HIGH);
+
+    pinMode(PIN_ENCODER_A, INPUT_PULLUP);
+    pinMode(PIN_ENCODER_B, INPUT_PULLUP);
+    pinMode(PIN_ENCODER_BTN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_A), encoderISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_B), encoderISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_BTN), buttonISR, CHANGE);
+
+}
+
+void doEncoderNavigation() {
+    if(encoderPosition != lastEncoderPosition) {
+        lastEncoderPosition = encoderPosition;
+        int16_t encPos = encoderPosition / 4;
+        int8_t diff = encPos - lastEncStepPosition;
+        lastEncStepPosition = encPos;
+        DEBUG.print(encoderPosition);
+        DEBUG.print(" ");
+        DEBUG.print(lastEncoderPosition);
+        DEBUG.print(" ");
+        DEBUG.print(diff);
+        DEBUG.println();
+        // DEBUG.println(encoderPosition);
+        if (diff > 0) {
+            nav.doNav(upCmd);
+        }
+        else if (diff < 0) {
+            nav.doNav(downCmd);
+        }
+    }
 }
 
 void loopDisplay() {
     nav.doInput();
+    doEncoderNavigation();
     if (nav.changed(0)) {
         u8g2.firstPage();
         do {

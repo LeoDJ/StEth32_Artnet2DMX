@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#define DEBUG Serial1
+#define DEBUG Serial1 // TX=PA9, RX=PA10
 
 #define CONFIG_PREAMBLE 0x55AA
 #define CONFIG_VERSION 1
@@ -15,13 +15,14 @@ typedef struct {
 
 extern config_t _config;
 
-#define MENU_SERIAL     SerialUSB
-#define PIN_ENCODER_A   PA0
-#define PIN_ENCODER_B   PA1
-#define PIN_ENCODER_BTN PA2
+#define MENU_SERIAL     Serial1
+#define PIN_ENCODER_A   PA5
+#define PIN_ENCODER_B   PA6
+#define PIN_ENCODER_BTN PA7
+#define BTN_DEBOUNCE    30
 
 #define I2C1_SCL    PB6
-#define I2C1_SDA    PB5
+#define I2C1_SDA    PB7
 
 #define DISPLAY_SCL I2C1_SCL
 #define DISPLAY_SDA I2C1_SDA
