@@ -13,7 +13,7 @@ using namespace Menu;
 #define fontName u8g2_font_6x10_mf 
 #define fontX 6
 #define fontY 12
-#define offsetX 1
+#define offsetX 0
 #define offsetY 3
 #define U8_Width 128
 #define U8_Height 64
@@ -35,16 +35,10 @@ const colorDef<uint8_t> colors[6] MEMMODE= {
 
 #define MAX_DEPTH 2
 
-encoderIn<PIN_ENCODER_A, PIN_ENCODER_B> encoder;
-encoderInStream<PIN_ENCODER_A, PIN_ENCODER_B> encStream(encoder, 4); // sensitivity 4
 
 serialIn menuSerial(MENU_SERIAL);
 
-//a keyboard with only one key as the encoder button
-keyMap encBtn_map[] = {{-PIN_ENCODER_BTN, options->getCmdChar(enterCmd)}}; // negative pin numer to activate internal pull-up
-keyIn<1> encButton(encBtn_map);
-
-MENU_INPUTS(in, &encStream, &encButton, &menuSerial);
+MENU_INPUTS(in, &menuSerial);
 
 MENU_OUTPUTS(out, MAX_DEPTH, 
     SERIAL_OUT(MENU_SERIAL),
@@ -65,7 +59,7 @@ MENU(mainMenu, "Artnet2DMX", doNothing, noEvent, wrapStyle,
 NAVROOT(nav, mainMenu, MAX_DEPTH, in, out);
 
 uint8_t encoderState = 0;
-int16_t encoderPosition = 0, lastEncoderPosition = 0, lastEncStepPosition = 0;
+uint16_t encoderPosition = 0, lastEncoderPosition = 0, lastEncStepPosition = 0;
 uint32_t lastButtonPress = 0;
 
 void buttonISR() {
@@ -101,6 +95,21 @@ void encoderISR() {
     }
 }
 
+void doEncoderNavigation() {
+    if(encoderPosition != lastEncoderPosition) {
+        lastEncoderPosition = encoderPosition;
+        int16_t encPos = encoderPosition / 4;
+        int8_t diff = encPos - lastEncStepPosition;
+        lastEncStepPosition = encPos;
+        if (diff > 0) {
+            nav.doNav(upCmd);
+        }
+        else if (diff < 0) {
+            nav.doNav(downCmd);
+        }
+    }
+}
+
 void initDisplay() {
     Wire.begin();
     // scanI2C();
@@ -116,29 +125,6 @@ void initDisplay() {
     attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_A), encoderISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_B), encoderISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_BTN), buttonISR, CHANGE);
-
-}
-
-void doEncoderNavigation() {
-    if(encoderPosition != lastEncoderPosition) {
-        lastEncoderPosition = encoderPosition;
-        int16_t encPos = encoderPosition / 4;
-        int8_t diff = encPos - lastEncStepPosition;
-        lastEncStepPosition = encPos;
-        DEBUG.print(encoderPosition);
-        DEBUG.print(" ");
-        DEBUG.print(lastEncoderPosition);
-        DEBUG.print(" ");
-        DEBUG.print(diff);
-        DEBUG.println();
-        // DEBUG.println(encoderPosition);
-        if (diff > 0) {
-            nav.doNav(upCmd);
-        }
-        else if (diff < 0) {
-            nav.doNav(downCmd);
-        }
-    }
 }
 
 void loopDisplay() {

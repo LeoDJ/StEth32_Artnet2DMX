@@ -10,12 +10,12 @@ typedef struct {
     bool dhcp;
     uint8_t ip[4];
     uint8_t numDmxOutputs;
-    uint16_t universes[4];
+    uint16_t universes[3];
 } config_t;
 
 extern config_t _config;
 
-#define MENU_SERIAL     Serial1
+#define MENU_SERIAL     SerialUSB
 #define PIN_ENCODER_A   PA5
 #define PIN_ENCODER_B   PA6
 #define PIN_ENCODER_BTN PA7
