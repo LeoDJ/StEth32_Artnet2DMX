@@ -27,7 +27,6 @@ extern config_t _config;
 #define DISPLAY_SCL I2C1_SCL
 #define DISPLAY_SDA I2C1_SDA
 
-
 #define SPI2_MOSI   PB15
 #define SPI2_MISO   PB14
 #define SPI2_SCK    PB13

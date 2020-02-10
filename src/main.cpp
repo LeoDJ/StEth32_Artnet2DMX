@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include "eth.h"
 #include "display.h"
+#include "dmx.h"
 
 
 config_t _config;
@@ -20,7 +21,7 @@ void readConfig() {
             true,
             {0, 0, 0, 0},
             1,
-            {0, 0, 0},
+            {1, 2, 3},
         };
         saveConfig();
     }
