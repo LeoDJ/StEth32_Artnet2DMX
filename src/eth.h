@@ -8,3 +8,4 @@ extern char macStr[13];
 extern EthernetClient net;
 
 void initEthernet();
+bool connectEthernet();

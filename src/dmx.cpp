@@ -10,7 +10,10 @@ void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
         if(size > DMX_CHANNELS_MAX) {
             size = DMX_CHANNELS_MAX;
         }
-        memcpy(dmxBufs[output], buf, size);
+        memcpy(dmxBufs[output] + 1, buf, size);
+        char tmp[100];
+        snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
+        DEBUG.print(tmp);
     }
 }
 

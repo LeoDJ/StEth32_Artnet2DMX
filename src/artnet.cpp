@@ -18,14 +18,13 @@ bool parseArtnet() {
     
     artnetPacket_t* pkg = (artnetPacket_t*)workBuf;
 
-    if(strcmp(pkg->headerStr, ARTNET_HEADER)) {
+    if(!strcmp(pkg->headerStr, ARTNET_HEADER)) { //strcmp returns 0 if successful
         if(pkg->protocolVersion >= PROTOCOL_VER) {
             if(pkg->opcode == OpCode::Dmx) {
                 for(int i = 0; i < MAX_UNIVERSES; i++) {
                     if(pkg->universe == _config.universes[i]) {
                         // if(pkg->sequence == 0 || pkg->sequence > lastSequence[i]) // TODO: sequence handling
                         setDmxData(i, pkg->data, pkg->length);
-                        // handle universe
                         return true;
                     }
                 }
@@ -36,7 +35,6 @@ bool parseArtnet() {
         }
     }
     return false;
-
 }
 
 void initArtnet() {
