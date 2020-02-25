@@ -2,6 +2,8 @@
 
 #define DEBUG Serial1 // TX=PA9, RX=PA10
 
+#define MAX_UNIVERSES   3
+
 #define CONFIG_PREAMBLE 0x55AA
 #define CONFIG_VERSION 1
 typedef struct {
@@ -10,7 +12,7 @@ typedef struct {
     bool dhcp;
     uint8_t ip[4];
     uint8_t numDmxOutputs;
-    uint16_t universes[3];
+    uint16_t universes[MAX_UNIVERSES];
 } config_t;
 
 extern config_t _config;

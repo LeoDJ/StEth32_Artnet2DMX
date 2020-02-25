@@ -3,6 +3,7 @@
 #include "eth.h"
 #include "display.h"
 #include "dmx.h"
+#include "artnet.h"
 
 
 config_t _config;
@@ -35,8 +36,10 @@ void setup() {
 
     // initEthernet();
     initDisplay();
+    initArtnet();
 }
 
 void loop() {
     loopDisplay();
+    loopArtnet();
 }
