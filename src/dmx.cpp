@@ -3,7 +3,10 @@
 
 #include <Arduino.h>
 
+void MX_TIM4_Init(void);
+
 uint8_t dmxBufs[3][513] = {{0}};
+
 
 void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
     if(output >= 0 && output <= MAX_UNIVERSES) {
@@ -17,8 +20,66 @@ void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
     }
 }
 
-
 void initDMX() {
     Serial2.begin(250000, SERIAL_8N2);
-    
+    DEBUG.print("Pin Mode: ");
+    DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
+
+    MX_TIM4_Init();
+    HAL_NVIC_SetPriority(TIM4_IRQn, 1, 1);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+    __HAL_RCC_TIM4_CLK_ENABLE();
+
+}
+
+TIM_HandleTypeDef htim4;
+
+void TIM4_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&htim4);
+    DEBUG.print("DMX Timer: ");
+    DEBUG.println(millis());
+}
+
+
+void MX_TIM4_Init(void)
+{
+    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+    TIM_MasterConfigTypeDef sMasterConfig = {0};
+    TIM_OC_InitTypeDef sConfigOC = {0};
+
+    htim4.Instance = TIM4;
+    htim4.Init.Prescaler = 7199; // 10kHz
+    htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim4.Init.Period = 199; //10kHz / 200 = 50Hz
+    htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+    if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    sConfigOC.OCMode = TIM_OCMODE_TIMING;
+    sConfigOC.Pulse = 0;
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+    if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
 }
