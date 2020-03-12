@@ -11,7 +11,14 @@ typedef struct {
     uint8_t configVersion;
     bool dhcp;
     uint8_t ip[4];
-    uint8_t numDmxOutputs;
+    union {
+        struct {
+            uint8_t uart3 : 1;
+            uint8_t uart2 : 1;
+            uint8_t uart1 : 1;
+        };
+        uint8_t raw;
+    } outputs;
     uint16_t universes[MAX_UNIVERSES];
 } config_t;
 

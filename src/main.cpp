@@ -16,13 +16,14 @@ void readConfig() {
     EEPROM.get(0, _config);
     // TODO: find better way of config version mismatch handling
     if (_config.preamble != CONFIG_PREAMBLE || _config.configVersion != CONFIG_VERSION) {
+        // initial values when no config exists
         _config = {
             CONFIG_PREAMBLE,
             CONFIG_VERSION,
-            true,
-            {0, 0, 0, 0},
-            1,
-            {1, 2, 3},
+            true,               // DHCP
+            {0, 0, 0, 0},       // IP
+            {1, 1, 0},          // Outputs
+            {1, 2, 3},          // Universe-Output Mapping
         };
         saveConfig();
     }

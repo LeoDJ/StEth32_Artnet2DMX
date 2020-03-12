@@ -79,7 +79,7 @@ bool connectEthernet() {
         }
     } 
     else {
-        Ethernet.begin(mac, IPAddress(mac));
+        Ethernet.begin(mac, IPAddress(_config.ip));
     }
 
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
