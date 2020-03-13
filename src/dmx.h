@@ -10,3 +10,5 @@
 
 // extern uint8_t dmxBufs[3][513];
 void setDmxData(uint8_t output, uint8_t* buf, uint16_t size);
+void initDMX();
+void loopDMX();

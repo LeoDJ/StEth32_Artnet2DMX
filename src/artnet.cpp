@@ -3,42 +3,45 @@
 #include "dmx.h"
 #include <EthernetUdp.h>
 // #include "stdarg.h"
-#include <sys/unistd.h>
+// #include <sys/unistd.h>
+#include <stdarg.h>
 
 EthernetUDP client;
 uint8_t lastSequence[MAX_UNIVERSES] = {0};
 
 // enable printf functionality, taken from https://github.com/opendata-heilbronn/modLED/blob/master/STM32/Src/uart.c
-int _write(int file, char *data, int len) {
-    if((file != STDOUT_FILENO) && (file != STDERR_FILENO)) {
-        errno = EBADF;
-        return -1;
-    }
+// int _write(int file, char *data, int len) {
+//     if((file != STDOUT_FILENO) && (file != STDERR_FILENO)) {
+//         errno = EBADF;
+//         return -1;
+//     }
     
-    DEBUG.write(data, len);
-    return len;
-}
-
-// void _printf(const char* fmt, ...) {
-//     va_list args;
-//     char buf[100];
-//     snprintf(buf, 100, fmt, args);
-//     DEBUG.write(buf);
+//     DEBUG.write(data, len);
+//     return len;
 // }
 
+void _printf(const char* fmt, ...) {
+    char buf[100];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    DEBUG.write(buf);
+    va_end(args);
+}
+
 void printHex(uint8_t* buf, uint16_t size) {
-	printf("       ");
+	_printf("       ");
 	for(uint8_t i = 0; i < 16; i++) {
-		printf("%1X  ", i);
+		_printf("%1X  ", i);
 	}
-	printf("\n%04X  ", 0);
+	_printf("\n%04X  ", 0);
 	for(uint16_t i = 0; i < size; i++) {
-		printf("%02X ", buf[i]);
+		_printf("%02X ", buf[i]);
 		if(i % 16 == 15) {
-			printf("\n%04X  ", i+1);
+			_printf("\n%04X  ", i+1);
 		}
 	}
-	printf("\n");
+	_printf("\n");
 }
 
 void sendArtPollReply(IPAddress ip) {
@@ -91,7 +94,7 @@ bool parseArtnet() {
 
 void initArtnet() {
     client.begin(ARTNET_PORT);
-    sendArtPollReply(IPAddress(0, 0, 0, 0)); // test
+    // sendArtPollReply(IPAddress(0, 0, 0, 0)); // test
 }
 
 void loopArtnet() {

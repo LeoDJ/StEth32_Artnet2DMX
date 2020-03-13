@@ -9,18 +9,19 @@ uint8_t dmxBufs[3][513] = {{0}};
 
 HardwareSerial* dmxUarts[] =    {&Serial3,  &Serial2,   &Serial1    }; 
 uint8_t dmxTxPins[] =           {PB10,      PA2,        PA9         };
-uint8_t dmxDePins[] =           {PB1,       0,          0           };
+uint8_t dmxDePins[] =           {PB1,       PA4,        PA6         };
 uint8_t numDmxUarts = sizeof(dmxUarts) / sizeof(dmxUarts[0]);
 
 void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
+    // Serial3.print('c');
     if(output >= 0 && output <= MAX_UNIVERSES) {
         if(size > DMX_CHANNELS_MAX) {
             size = DMX_CHANNELS_MAX;
         }
         memcpy(dmxBufs[output] + 1, buf, size);
-        char tmp[100];
-        snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
-        DEBUG.print(tmp);
+        // char tmp[100];
+        // snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
+        // DEBUG.print(tmp);
     }
 }
 
@@ -33,7 +34,10 @@ void sendDMX() {
     // Space for break
     for(uint8_t i = 0; i < numDmxUarts; i++) {
         if(outputEnabled(i)) { 
-            digitalWrite(dmxTxPins[i], LOW); // TODO: probably have to change pin mode beforehand
+            pinMode(dmxTxPins[i], OUTPUT);
+            digitalWrite(dmxTxPins[i], HIGH); // ensure long enough mark before next packet
+            delayMicroseconds(20);
+            digitalWrite(dmxTxPins[i], LOW); 
         }
     }
     delayMicroseconds(200); // TODO: make this nicer with timers
@@ -44,37 +48,51 @@ void sendDMX() {
             digitalWrite(dmxTxPins[i], HIGH);
         }
     }
-    delayMicroseconds(20);
+    delayMicroseconds(20); // already produces a suitable delay of 15us without this, but eh
 
     // do output with start byte
     for(uint8_t i = 0; i < numDmxUarts; i++) {
         if(outputEnabled(i)) { 
+            pin_function(digitalPinToPinName(dmxTxPins[i]), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, 0));
             dmxUarts[i]->write(dmxBufs[i], 513); // TODO: dynamic dmx length
             // HAL_UART_Transmit_DMA() // TODO: probably have to use DMA
         }
     }
-    DEBUG.println("Send DMX took µs: " + String(micros() - time));
+
+    // delayMicroseconds(200);
+    // DEBUG.println("Send DMX took µs: " + String(micros() - time));
 }
 
 void initDMX() {
     for(uint8_t i = 0; i < numDmxUarts; i++) {
         if(outputEnabled(i)) { 
             dmxUarts[i]->begin(250000, SERIAL_8N2);
-            // pinMode(dmxDePins[i], OUTPUT); // TODO: comment in when other de pins are known
-            // digitalWrite(dmxDePins[i], HIGH);
+            pinMode(dmxDePins[i], OUTPUT); // TODO: comment in when other de pins are known
+            digitalWrite(dmxDePins[i], HIGH);
         }
     }
-    DEBUG.print("Pin Mode: ");
-    DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
-    digitalWrite(PA2, LOW);
-    DEBUG.print("Pin Mode: ");
-    DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
+    // DEBUG.print("Pin Mode: ");
+    // DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
+    // digitalWrite(PA2, LOW);
+    // DEBUG.print("Pin Mode: ");
+    // DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
 
+    // sendDMX();
+
+    // TODO: fix timer
     MX_TIM4_Init();
     HAL_NVIC_SetPriority(TIM4_IRQn, 1, 1);
     HAL_NVIC_EnableIRQ(TIM4_IRQn);
     __HAL_RCC_TIM4_CLK_ENABLE();
+}
 
+// workaround until timer is fixed
+uint32_t lastSend = 0;
+void loopDMX() {
+    if(millis() - lastSend >= 30) { // 40 Hz
+        lastSend = millis();
+        sendDMX();
+    } 
 }
 
 TIM_HandleTypeDef htim4;

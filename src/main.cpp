@@ -4,6 +4,7 @@
 #include "display.h"
 #include "dmx.h"
 #include "artnet.h"
+#include "dmx.h"
 
 
 config_t _config;
@@ -22,7 +23,7 @@ void readConfig() {
             CONFIG_VERSION,
             true,               // DHCP
             {0, 0, 0, 0},       // IP
-            {1, 1, 0},          // Outputs
+            {1, 0, 0},          // Outputs
             {1, 2, 3},          // Universe-Output Mapping
         };
         saveConfig();
@@ -39,9 +40,11 @@ void setup() {
     initEthernet();
     connectEthernet();
     initArtnet();
+    initDMX();
 }
 
 void loop() {
     loopDisplay();
     loopArtnet();
+    loopDMX();
 }
