@@ -4,8 +4,10 @@
 #include <Arduino.h>
 
 void MX_TIM4_Init(void);
+void sendDMX();
 
 uint8_t dmxBufs[3][513] = {{0}};
+uint8_t dmxOutBuf[3][513] = {{0}};
 
 HardwareSerial* dmxUarts[] =    {&Serial3,  &Serial2,   &Serial1    }; 
 uint8_t dmxTxPins[] =           {PB10,      PA2,        PA9         };
@@ -19,9 +21,10 @@ void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
             size = DMX_CHANNELS_MAX;
         }
         memcpy(dmxBufs[output] + 1, buf, size);
-        // char tmp[100];
-        // snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
-        // DEBUG.print(tmp);
+        sendDMX();
+        char tmp[100];
+        snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
+        DEBUG.print(tmp);
     }
 }
 
@@ -29,7 +32,11 @@ inline uint8_t outputEnabled(uint8_t outputId) {
     return _config.outputs.raw & (1 << outputId);
 }
 
+uint32_t lastDmxSend = 0;
 void sendDMX() {
+    while(millis() - lastDmxSend < 30) {}
+    lastDmxSend = millis();
+
     uint32_t time = micros();
     // Space for break
     for(uint8_t i = 0; i < numDmxUarts; i++) {
@@ -38,6 +45,7 @@ void sendDMX() {
             digitalWrite(dmxTxPins[i], HIGH); // ensure long enough mark before next packet
             delayMicroseconds(20);
             digitalWrite(dmxTxPins[i], LOW); 
+            // memcpy(dmxOutBuf[i], dmxBufs[i], 513);
         }
     }
     delayMicroseconds(200); // TODO: make this nicer with timers
@@ -91,7 +99,7 @@ uint32_t lastSend = 0;
 void loopDMX() {
     if(millis() - lastSend >= 30) { // 40 Hz
         lastSend = millis();
-        sendDMX();
+        // sendDMX();
     } 
 }
 

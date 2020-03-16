@@ -21,8 +21,8 @@ void readConfig() {
         _config = {
             CONFIG_PREAMBLE,
             CONFIG_VERSION,
-            true,               // DHCP
-            {0, 0, 0, 0},       // IP
+            false,               // DHCP
+            {10, 67, 3, 225},       // IP
             {1, 0, 0},          // Outputs
             {1, 2, 3},          // Universe-Output Mapping
         };
@@ -35,6 +35,8 @@ void setup() {
     DEBUG.begin(115200);
     DEBUG.println("\nStEth32 Artnet2DMX\n");
     readConfig();
+
+    pinMode(LED_BUILTIN, OUTPUT);
 
     initDisplay();
     initEthernet();
