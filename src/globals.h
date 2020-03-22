@@ -1,6 +1,10 @@
 #include <stdint.h>
 
+#ifndef OVERWRITE_USART1_IRQHandler // enables DMX output on UART1
 #define DEBUG Serial1 // TX=PA9, RX=PA10
+#else
+#define DEBUG SerialUSB
+#endif
 
 #define MAX_UNIVERSES   3
 

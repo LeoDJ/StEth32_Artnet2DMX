@@ -21,9 +21,9 @@ void readConfig() {
         _config = {
             CONFIG_PREAMBLE,
             CONFIG_VERSION,
-            false,               // DHCP
-            {10, 67, 3, 225},       // IP
-            {1, 0, 0},          // Outputs
+            true,               // DHCP
+            {0, 0, 0, 0},       // IP
+            {1, 1, 1},          // Outputs
             {1, 2, 3},          // Universe-Output Mapping
         };
         saveConfig();

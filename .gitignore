@@ -8,3 +8,5 @@
 .vscode
 README
 config.h
+*.logicdata
+*.sal

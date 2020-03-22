@@ -1,5 +1,7 @@
 #include "dmx.h"
 #include "globals.h"
+#include "cubemx/dma.h"
+#include "cubemx/usart.h"
 
 #include <Arduino.h>
 
@@ -7,11 +9,11 @@ void MX_TIM4_Init(void);
 void sendDMX();
 
 uint8_t dmxBufs[3][513] = {{0}};
-uint8_t dmxOutBuf[3][513] = {{0}};
+// uint8_t dmxOutBuf[3][513] = {{0}}; // ToDo: maybe double buffering, if necessary?
 
-HardwareSerial* dmxUarts[] =    {&Serial3,  &Serial2,   &Serial1    }; 
-uint8_t dmxTxPins[] =           {PB10,      PA2,        PA9         };
-uint8_t dmxDePins[] =           {PB1,       PA4,        PA6         };
+UART_HandleTypeDef* dmxUarts[] =    {&huart3,  &huart2,    &huart1 };
+uint8_t dmxTxPins[] =               {PB10,      PA2,        PA9     };
+uint8_t dmxDePins[] =               {PB1,       PA4,        PA6     };
 uint8_t numDmxUarts = sizeof(dmxUarts) / sizeof(dmxUarts[0]);
 
 void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
@@ -22,9 +24,9 @@ void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
         }
         memcpy(dmxBufs[output] + 1, buf, size);
         sendDMX();
-        char tmp[100];
-        snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
-        DEBUG.print(tmp);
+        // char tmp[100];
+        // snprintf(tmp, 100, "DMX: %02X %02X %02X %02X\n", dmxBufs[output][1], dmxBufs[output][2], dmxBufs[output][3], dmxBufs[output][4]);
+        // DEBUG.print(tmp);
     }
 }
 
@@ -33,17 +35,25 @@ inline uint8_t outputEnabled(uint8_t outputId) {
 }
 
 uint32_t lastDmxSend = 0;
+
 void sendDMX() {
-    while(millis() - lastDmxSend < 30) {}
+    while(millis() - lastDmxSend < 23) {}
     lastDmxSend = millis();
 
     uint32_t time = micros();
-    // Space for break
+
+    // ensure long enough mark before next packet
     for(uint8_t i = 0; i < numDmxUarts; i++) {
         if(outputEnabled(i)) { 
             pinMode(dmxTxPins[i], OUTPUT);
-            digitalWrite(dmxTxPins[i], HIGH); // ensure long enough mark before next packet
-            delayMicroseconds(20);
+            digitalWrite(dmxTxPins[i], HIGH); 
+        }
+    }
+    delayMicroseconds(20);
+
+    // Space for break
+    for(uint8_t i = 0; i < numDmxUarts; i++) {
+        if(outputEnabled(i)) { 
             digitalWrite(dmxTxPins[i], LOW); 
             // memcpy(dmxOutBuf[i], dmxBufs[i], 513);
         }
@@ -62,30 +72,25 @@ void sendDMX() {
     for(uint8_t i = 0; i < numDmxUarts; i++) {
         if(outputEnabled(i)) { 
             pin_function(digitalPinToPinName(dmxTxPins[i]), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, 0));
-            dmxUarts[i]->write(dmxBufs[i], 513); // TODO: dynamic dmx length
-            // HAL_UART_Transmit_DMA() // TODO: probably have to use DMA
+            HAL_UART_Transmit_DMA(dmxUarts[i], dmxBufs[i], 513);
         }
     }
-
-    // delayMicroseconds(200);
-    // DEBUG.println("Send DMX took µs: " + String(micros() - time));
 }
 
 void initDMX() {
     for(uint8_t i = 0; i < numDmxUarts; i++) {
         if(outputEnabled(i)) { 
-            dmxUarts[i]->begin(250000, SERIAL_8N2);
-            pinMode(dmxDePins[i], OUTPUT); // TODO: comment in when other de pins are known
+            pinMode(dmxDePins[i], OUTPUT);
             digitalWrite(dmxDePins[i], HIGH);
         }
     }
-    // DEBUG.print("Pin Mode: ");
-    // DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
-    // digitalWrite(PA2, LOW);
-    // DEBUG.print("Pin Mode: ");
-    // DEBUG.println(LL_GPIO_GetPinMode(UART2_TX));
 
-    // sendDMX();
+    MX_DMA_Init();
+    #ifdef OVERWRITE_USART1_IRQHandler
+    MX_USART1_UART_Init();
+    #endif
+    MX_USART2_UART_Init();
+    MX_USART3_UART_Init();
 
     // TODO: fix timer
     MX_TIM4_Init();
