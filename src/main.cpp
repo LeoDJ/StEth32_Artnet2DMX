@@ -23,8 +23,8 @@ void readConfig() {
             CONFIG_VERSION,
             true,               // DHCP
             {0, 0, 0, 0},       // IP
-            {1, 1, 1},          // Outputs
-            {1, 2, 3},          // Universe-Output Mapping
+            {1, 1, 0},          // Outputs
+            {1, 2, 3},          // Universe-Output Mapping, only least 4 bits are allowed to change
         };
         saveConfig();
     }

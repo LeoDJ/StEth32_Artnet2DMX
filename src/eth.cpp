@@ -1,6 +1,6 @@
 #include "eth.h"
 
-uint8_t mac[6];
+uint8_t macAddr[6];
 char macStr[13];
 EthernetClient net;
 
@@ -64,7 +64,7 @@ void initEthernet() {
 
     Ethernet.init(SPI2_CS);
 
-    generateMAC(mac);
+    generateMAC(macAddr);
 }
 
 bool connectEthernet() {
@@ -73,13 +73,13 @@ bool connectEthernet() {
     bool success= true;
 
     if(_config.dhcp) {
-        if (Ethernet.begin(mac, 10000) == 0) {
+        if (Ethernet.begin(macAddr, 10000) == 0) {
             DEBUG.println("Failed to configure Ethernet using DHCP");
             success= false;
         }
     } 
     else {
-        Ethernet.begin(mac, IPAddress(_config.ip));
+        Ethernet.begin(macAddr, IPAddress(_config.ip));
     }
 
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {

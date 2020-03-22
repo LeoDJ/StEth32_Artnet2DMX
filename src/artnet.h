@@ -84,9 +84,6 @@ struct OpCode {
     };
 };
 
-#define AP_SHORT_NAME   "StEth32Artnet2DMX"
-#define AP_LONG_NAME    AP_SHORT_NAME
-
 // bitfields are LSB first
 typedef union ArtPollStatus1 {
     struct {
