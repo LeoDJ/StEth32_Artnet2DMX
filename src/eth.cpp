@@ -2,6 +2,7 @@
 
 uint8_t macAddr[6];
 char macStr[13];
+char ipStr[16];
 EthernetClient net;
 
 static inline uint64_t mix(uint64_t h) {
@@ -94,7 +95,9 @@ bool connectEthernet() {
     if(success) {
         // print your local IP address:
         DEBUG.print("My IP address: ");
-        DEBUG.println(Ethernet.localIP());
+        IPAddress ip = Ethernet.localIP();
+        DEBUG.println(ip);
+        snprintf(ipStr, sizeof(ipStr), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
     }
     return success;
 }

@@ -12,11 +12,12 @@
 #define AP_SHORT_NAME   "StEth32Artnet2DMX" // limited to 17 chars
 #define AP_LONG_NAME    AP_SHORT_NAME       // limited to 63 chars
 
-
-#define MENU_SERIAL     SerialUSB
-#define PIN_ENCODER_A   PA5
-#define PIN_ENCODER_B   PA6
-#define PIN_ENCODER_BTN PA7
+#ifdef PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
+    #define MENU_SERIAL     SerialUSB
+#endif
+#define PIN_ENCODER_A   PA0  //PA5
+#define PIN_ENCODER_B   PA1  //PA6
+#define PIN_ENCODER_BTN PC15 //PA7
 #define BTN_DEBOUNCE    30
 
 #define I2C1_SCL    PB6
@@ -36,7 +37,7 @@
 #define SPI1_CS     PA4
 
 #define CONFIG_PREAMBLE 0x55AA
-#define CONFIG_VERSION 1
+#define CONFIG_VERSION 2
 typedef struct {
     uint16_t preamble;
     uint8_t configVersion;

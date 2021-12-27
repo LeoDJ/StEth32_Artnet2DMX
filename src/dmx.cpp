@@ -15,7 +15,7 @@ uint8_t dmxBufs[3][513] = {{0}};
 
 UART_HandleTypeDef* dmxUarts[] =    {&huart3,  &huart2,    &huart1 };
 uint8_t dmxTxPins[] =               {PB10,      PA2,        PA9     };
-uint8_t dmxDePins[] =               {PB1,       PA4,        PA6     };
+uint8_t dmxDePins[] =               {PA4,       PA5,        PB1     };
 uint8_t numDmxUarts = sizeof(dmxUarts) / sizeof(dmxUarts[0]);
 
 void setDmxData(uint8_t output, uint8_t* buf, uint16_t size) {
@@ -60,6 +60,8 @@ void sendDMX() {
             HAL_UART_Transmit_DMA(dmxUarts[i], dmxBufs[i], 513);
         }
     }
+
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
 void sendDMX(HardwareTimer* ht) {
@@ -76,7 +78,7 @@ void initDMX() {
 
     MX_DMA_Init();
     #ifdef OVERWRITE_USART1_IRQHandler
-    MX_USART1_UART_Init();
+        MX_USART1_UART_Init();
     #endif
     MX_USART2_UART_Init();
     MX_USART3_UART_Init();
