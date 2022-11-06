@@ -94,6 +94,9 @@ bool connectEthernet() {
     } else if (Ethernet.linkStatus() == LinkOFF) {
         DEBUG.println("Ethernet cable is not connected.");
         dispShowAlert("Error:\nEthernet cable not \nconnected!");
+        if (!_config.dhcp) {
+            snprintf(ipStr, sizeof(ipStr), "%3d.%3d.%3d.%3d", _config.ip[0], _config.ip[1], _config.ip[2], _config.ip[3]);
+        }
         success = false;
     }
     
