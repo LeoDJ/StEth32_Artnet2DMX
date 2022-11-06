@@ -1,3 +1,4 @@
+#include "display.h"
 #include "globals.h"
 #include <menu.h>
 #include <menuIO/serialOut.h>
@@ -22,6 +23,7 @@ using namespace Menu;
 
 // U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, DISPLAY_SCL, DISPLAY_SDA);
 U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, DISPLAY_SCL, DISPLAY_SDA);
+
 
 // define menu colors --------------------------------------------------------
 // each color is in the format:
@@ -57,34 +59,109 @@ MENU_OUTPUTS(out, MAX_DEPTH,
     U8G2_OUT(u8g2, colors, fontX, fontY, offsetX, offsetY, {0, 0, U8_Width / fontX , U8_Height / fontY})
 );
 
-TOGGLE(_config.dhcp, menuIpType, "IP Type: ", doNothing, exitEvent, wrapStyle,
+TOGGLE(_config.dhcp, menuIpType, "IP Type: ", menuIpTypeChanged, enterEvent, wrapStyle,
     VALUE("Static", false, doNothing, noEvent),
     VALUE("DHCP", true, doNothing, noEvent)
 );
 
-char* const ipDigit PROGMEM="0123456789 ";//allowed digits
-char* const ipValidator[] PROGMEM={ipDigit,ipDigit,ipDigit,".",ipDigit,ipDigit,ipDigit,".",ipDigit,ipDigit,ipDigit,".",ipDigit,ipDigit,ipDigit};//validators
+char* const ipDigit1 PROGMEM = " 12";
+char* const ipDigit PROGMEM = "0123456789 ";//allowed digits
+char* const ipValidator[] PROGMEM = {ipDigit1,ipDigit,ipDigit,".",ipDigit1,ipDigit,ipDigit,".",ipDigit1,ipDigit,ipDigit,".",ipDigit1,ipDigit,ipDigit};//validators
 
     // OP("Op1", doNothing, noEvent),
 MENU(mainMenu, "Artnet2DMX", doNothing, noEvent, wrapStyle,
-    EDIT("IP", ipStr, ipValidator, doNothing, noEvent, noStyle),
+    EDIT("IP", ipStr, ipValidator, menuIpChanged, exitEvent, noStyle),
     SUBMENU(menuIpType),
-    EXIT("Exit")
+    OP("Save", menuSave, enterEvent),
+    EXIT("Screen Off"),
+    OP("Reboot", NVIC_SystemReset, enterEvent)
 );
+
+enum {
+    menuPos_ip,
+    menuPos_ipType,
+    menuPos_save,
+    menuPos_exit,
+    menuPos_reboot,
+} mainMenu_e;
 
 NAVROOT(nav, mainMenu, MAX_DEPTH, in, out);
 
-uint8_t encoderState = 0;
+
+
+
+void menuIpChanged() {
+    parseIpStr();   // generates error message if invalid
+}
+
+void menuIpTypeChanged() {
+    if (_config.dhcp) {
+        mainMenu[menuPos_ip].disable();
+    }
+    else {
+        mainMenu[menuPos_ip].enable();
+    }
+}
+
+void menuSave() {
+    if (!_config.dhcp) {
+        if (!parseIpStr()) {
+            return;
+        }
+    }
+    saveConfig();
+    snprintf(ipStr, sizeof(ipStr), "Reconnecting...");
+    updateDisplay();
+    // connectEthernet();
+    NVIC_SystemReset();
+}
+
+const char *dispAlertMsg = "";
+
+result alert(menuOut& o, idleEvent e) {
+    if (e == idling) {
+        uint8_t line = 0;
+
+        char msg[strlen(dispAlertMsg) + 1];
+        strcpy(msg, dispAlertMsg);
+
+        char *token = strtok(msg, "\n");
+        do {
+            o.setCursor(0, line++);
+            o.print(token);
+            token = strtok(NULL, "\n");
+        } while (token != NULL);
+
+        o.setCursor(0, line);
+        o.print("       [ OK ]");
+    }
+    return proceed;
+}
+
+void dispShowAlert(const char *message) {
+    dispAlertMsg = message;
+    nav.idleOn(alert);
+}
+
+
+uint8_t encoderState = 3;
 uint16_t encoderPosition = 0, lastEncoderPosition = 0, lastEncStepPosition = 0;
-uint32_t lastButtonPress = 0;
+uint32_t lastButtonPress = 0, lastButtonRelease = 0;
+bool lastButtonState = true;
 
 void buttonISR() {
     uint32_t now = millis();
-    if(now - lastButtonPress > BTN_DEBOUNCE) {
+    bool state = digitalRead(PIN_ENCODER_BTN);
+    if(now - lastButtonPress > BTN_DEBOUNCE && state == 0) { // presssed
         lastButtonPress = now;
-        if(!digitalRead(PIN_ENCODER_BTN)) {
+        if(!state && lastButtonState == true) {
             nav.doNav(enterCmd);
         }
+        lastButtonState = state;
+    }
+    if (now - lastButtonRelease > BTN_DEBOUNCE && state == 1) { // released
+        lastButtonRelease = now;
+        lastButtonState = state;
     }
 }
 
@@ -180,16 +257,22 @@ void initDisplay() {
     attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_B), encoderISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_BTN), buttonISR, CHANGE);
 
-    mainMenu[0].disable(); // IP entry readonly
+    if (_config.dhcp) {
+        mainMenu[menuPos_ip].disable();
+    }
+}
+
+void updateDisplay() {
+    u8g2.firstPage();
+    do {
+        nav.doOutput();
+    } while (u8g2.nextPage());
 }
 
 void loopDisplay() {
     nav.doInput();
     doEncoderNavigation();
     if (nav.changed(0)) {
-        u8g2.firstPage();
-        do {
-            nav.doOutput();
-        } while (u8g2.nextPage());
+        updateDisplay();
     }
 }

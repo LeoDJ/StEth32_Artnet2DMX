@@ -36,9 +36,13 @@ void setup() {
     DEBUG.println("\nStEth32 Artnet2DMX\n");
     readConfig();
 
-    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(PIN_LED_1, OUTPUT);
+    digitalWrite(PIN_LED_1, HIGH); // active low
+    pinMode(PIN_LED_2, OUTPUT);
+    digitalWrite(PIN_LED_2, HIGH); // active low
 
     initDisplay();
+    loopDisplay(); // show initial display content
     initEthernet();
     connectEthernet();
     initArtnet();

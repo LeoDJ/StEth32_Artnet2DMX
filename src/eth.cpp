@@ -1,8 +1,9 @@
 #include "eth.h"
+#include "display.h"
 
 uint8_t macAddr[6];
 char macStr[13];
-char ipStr[16];
+char ipStr[16] = "   .   .   .   ";
 EthernetClient net;
 
 static inline uint64_t mix(uint64_t h) {
@@ -76,20 +77,24 @@ bool connectEthernet() {
     if(_config.dhcp) {
         if (Ethernet.begin(macAddr, 10000) == 0) {
             DEBUG.println("Failed to configure Ethernet using DHCP");
+            dispShowAlert("Error:\nDHCP failed!");
             success= false;
         }
     } 
     else {
         Ethernet.begin(macAddr, IPAddress(_config.ip));
+        delay(500);
     }
 
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
         DEBUG.println("Ethernet module was not found.  Sorry, can't run without hardware. :(");
+        dispShowAlert("Error:\nEthernet module init \nerror!");
         delay(5000);
         HAL_NVIC_SystemReset();
     } else if (Ethernet.linkStatus() == LinkOFF) {
         DEBUG.println("Ethernet cable is not connected.");
-        success= false;
+        dispShowAlert("Error:\nEthernet cable not \nconnected!");
+        success = false;
     }
     
     if(success) {
@@ -97,7 +102,31 @@ bool connectEthernet() {
         DEBUG.print("My IP address: ");
         IPAddress ip = Ethernet.localIP();
         DEBUG.println(ip);
-        snprintf(ipStr, sizeof(ipStr), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+        snprintf(ipStr, sizeof(ipStr), "%3d.%3d.%3d.%3d", ip[0], ip[1], ip[2], ip[3]);
+        if (_config.dhcp) {
+            memcpy(&_config.ip[0], &ip[0], 4);  // save DHCP address in config
+        }
+        updateDisplay();
     }
     return success;
+}
+
+bool parseIpStr() {
+    int ip[4];
+    int matchedItems = sscanf(ipStr, "%3d.%3d.%3d.%3d", &ip[0], &ip[1], &ip[2], &ip[3]);
+    if (matchedItems < 4) {
+        dispShowAlert("Error:\nInvalid IP address format!");
+        return false;
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (ip[i] >= 0 && ip[i] <= 255) {
+            _config.ip[i] = ip[i];
+        }
+        else {
+            dispShowAlert("Error:\nInvalid IP address!");
+            return false;
+        }
+    }
+    return true;
 }

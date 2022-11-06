@@ -13,12 +13,15 @@
 #define AP_LONG_NAME    AP_SHORT_NAME       // limited to 63 chars
 
 #ifdef PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
-    #define MENU_SERIAL     SerialUSB
+    #define MENU_SERIAL     SerialUSB    // saves about 700 bytes if not used
 #endif
 #define PIN_ENCODER_A   PA0  //PA5
 #define PIN_ENCODER_B   PA1  //PA6
 #define PIN_ENCODER_BTN PC15 //PA7
 #define BTN_DEBOUNCE    30
+
+#define PIN_LED_1       PC13
+#define PIN_LED_2       PC14
 
 #define I2C1_SCL    PB6
 #define I2C1_SDA    PB7
@@ -37,7 +40,7 @@
 #define SPI1_CS     PA4
 
 #define CONFIG_PREAMBLE 0x55AA
-#define CONFIG_VERSION 2
+#define CONFIG_VERSION 1
 typedef struct {
     uint16_t preamble;
     uint8_t configVersion;
@@ -55,3 +58,5 @@ typedef struct {
 } config_t;
 
 extern config_t _config;
+
+void saveConfig();

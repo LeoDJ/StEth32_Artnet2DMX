@@ -61,7 +61,7 @@ void sendDMX() {
         }
     }
 
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    // digitalWrite(PIN_LED_1, !digitalRead(PIN_LED_1));
 }
 
 void sendDMX(HardwareTimer* ht) {

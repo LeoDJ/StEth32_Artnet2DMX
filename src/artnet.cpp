@@ -131,7 +131,7 @@ bool parseArtnet() {
                     if(pkg->universe == _config.universes[i]) {
                         // if(pkg->sequence == 0 || pkg->sequence > lastSequence[i]) // TODO: sequence handling
                         setDmxData(i, pkg->data, pkg->length);
-                        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+                        digitalWrite(PIN_LED_1, !digitalRead(PIN_LED_1));
                         // _printf("%10d %d\n", micros(), pkg->universe);
                         return true;
                     }

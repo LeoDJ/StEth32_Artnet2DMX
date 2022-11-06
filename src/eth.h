@@ -11,3 +11,4 @@ extern EthernetClient net;
 
 void initEthernet();
 bool connectEthernet();
+bool parseIpStr();
